@@ -1,0 +1,47 @@
+-- UNIVERSAL REMOVE ALL EFFECTS
+-- Client-side visual exploit
+
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local EFFECT_CLASSES = {
+    ParticleEmitter = true,
+    Beam = true,
+    Trail = true,
+    Fire = true,
+    Smoke = true,
+    Sparkles = true,
+    Explosion = true,
+    PointLight = true,
+    SpotLight = true,
+    SurfaceLight = true
+}
+
+local function removeEffect(obj)
+    if EFFECT_CLASSES[obj.ClassName] then
+        pcall(function()
+            obj:Destroy()
+        end)
+    end
+end
+
+local function scan(container)
+    for _, obj in ipairs(container:GetDescendants()) do
+        removeEffect(obj)
+    end
+end
+
+-- Xóa effect hiện có
+scan(workspace)
+scan(ReplicatedStorage)
+
+-- Xóa effect spawn sau
+workspace.DescendantAdded:Connect(removeEffect)
+ReplicatedStorage.DescendantAdded:Connect(removeEffect)
+
+-- Anti-respawn (ép xóa liên tục)
+RunService.RenderStepped:Connect(function()
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        removeEffect(obj)
+    end
+end)
