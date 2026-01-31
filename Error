@@ -1,0 +1,350 @@
+game:GetService("TextChatService").TextChannels.RBXGeneral:DisplaySystemMessage("<font color='#ffffff'>[Dreamcore Mode]: Script Succesfully Executed/Loaded.</font>")
+
+local TextChatService = game:GetService('TextChatService')
+
+TextChatService.OnIncomingMessage = function(Message: TextChatMessage)
+    if Message.TextSource then
+        local player = game.Players:GetPlayerByUserId(Message.TextSource.UserId)
+        if player.Name == 'gftfujtrtr' then
+            Message.PrefixText = " <font color='#7B11FD'>[The Creator]</font> "
+                .. Message.PrefixText
+        end
+       if player.Name == 'bre5be123' then
+            Message.PrefixText = " <font color='#7B11FD'>[The Creator]</font> "
+                .. Message.PrefixText
+        end
+        if player.Name == 'vuivuiviu3' then
+            Message.PrefixText = " <font color='#7B11FD'>[Nd Creator]</font> "
+                .. Message.PrefixText
+        end
+       if player.Name == 'vuivuiviu2' then
+            Message.PrefixText = " <font color='#7B11FD'>[Nd Creator]</font> "
+                .. Message.PrefixText
+        end
+        if player.Name == 'Whywwhat3' then
+            Message.PrefixText = " <font color='#00BBFF'>[Special]</font> "
+                .. Message.PrefixText
+        end
+        if player.Name == 'dimaalt4' or player.Name == 'dima_082ooo' then
+            Message.PrefixText = " <font color='#FFD800'>[Special]</font> "
+                .. Message.PrefixText
+        end
+    end
+end
+
+-- Basalt Wardrobes
+-- DOORS | CONVERT ALL WARDROBES TO METAL (MULTI-WARDROBE FIX)
+-- AUTO APPLY FOR EVERY ROOM
+
+local Rooms = workspace:WaitForChild("CurrentRooms")
+local GameData = game.ReplicatedStorage:WaitForChild("GameData")
+local LatestRoom = GameData:WaitForChild("LatestRoom")
+
+-- CONFIG
+local SOUND_ENTER_ID = "rbxassetid://4416839551"
+local SOUND_EXIT_ID  = "rbxassetid://75433549183486"
+
+local function ConvertWardrobe(wardrobe)
+    -- ===== WOOD → METAL =====
+    local woodParts = {
+        "Door1",
+        "Door2",
+        "Main",
+        "Wood"
+    }
+
+    for _, partName in ipairs(woodParts) do
+        local part = wardrobe:FindFirstChild(partName, true)
+        if part and part:IsA("BasePart") then
+            pcall(function()
+                part.Material = Enum.Material.CeramicTiles
+            end)
+        end
+    end
+
+    -- ===== SOUND =====
+    local main = wardrobe:FindFirstChild("Main", true)
+    if main then
+        local enterSound = main:FindFirstChild("SoundEnter")
+        if enterSound and enterSound:IsA("Sound") then
+            enterSound.SoundId = SOUND_ENTER_ID
+        end
+
+        local exitSound = main:FindFirstChild("SoundExit")
+        if exitSound and exitSound:IsA("Sound") then
+            exitSound.SoundId = SOUND_EXIT_ID
+        end
+    end
+
+local function ProcessRoom(room)
+    local assets = room:FindFirstChild("Assets")
+    if not assets then return end
+
+    -- DUYỆT TẤT CẢ WARDROBE TRONG PHÒNG
+    for _, inst in ipairs(assets:GetDescendants()) do
+        if inst.Name == "Wardrobe" and inst:IsA("Model") then
+            ConvertWardrobe(inst)
+        end
+    end
+end
+
+-- Áp dụng cho phòng đã spawn
+for _, room in ipairs(Rooms:GetChildren()) do
+    ProcessRoom(room)
+end
+
+-- Mỗi lần qua phòng mới → chạy lại (fix spawn trễ)
+LatestRoom.Changed:Connect(function()
+    task.wait(0.4)
+    for _, room in ipairs(Rooms:GetChildren()) do
+        ProcessRoom(room)
+    end
+end)
+
+print("✅ ALL wardrobes in ALL rooms converted successfully")
+
+-- Doors sound changer
+coroutine.wrap(function()
+    while true do
+        wait()
+
+workspace.CurrentRooms[game.ReplicatedStorage.GameData.LatestRoom.Value].Door.Door.Open.SoundId = "rbxassetid://7309104360"
+
+workspace.CurrentRooms[game.ReplicatedStorage.GameData.LatestRoom.Value].Door.Door.Open.PlaybackSpeed = 0.9
+
+workspace.CurrentRooms[game.ReplicatedStorage.GameData.LatestRoom.Value].Door.Door.Bell.SoundId = "rbxassetid://0"
+        workspace.CurrentRooms[game.ReplicatedStorage.GameData.LatestRoom.Value].Door.Door.SlamOpen.SoundId = "rbxassetid://7309104360"
+
+workspace.CurrentRooms[game.ReplicatedStorage.GameData.LatestRoom.Value].Door.Door.SlamOpen.PlaybackSpeed = 0.9
+        workspace.CurrentRooms[game.ReplicatedStorage.GameData.LatestRoom.Value].Door.Door.SlamOpen.TimePosition = 0
+    end
+end)()
+
+local Lighting = game:GetService("Lighting")
+
+-- 1. Tắt ánh sáng môi trường
+Lighting.FogEnd = 30
+Lighting.FogStart = 15
+
+-- Cataclysm Light
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Guestly-V2-2/Doors/refs/heads/main/Cataclysmlight"))()
+
+coroutine.wrap(function()
+game:GetService("ReplicatedStorage").GameData.LatestRoom.Changed:Connect(function(p43)
+local Hi = game:GetService("Workspace").CurrentRooms[p43].Parts
+local Hello = game:GetService("Workspace").CurrentRooms[p43].Assets
+      for _, obj in pairs(Hi:GetDescendants()) do
+    if obj:IsA("BasePart") and obj.Name == "Floor" then
+        obj.Material = Enum.Material.Grass
+obj.MaterialVariant = "PatchyGrass"
+obj.Color = Color3.fromRGB(30, 195, 0)
+    end
+end
+for _, obj in pairs(Hello:GetDescendants()) do
+    if obj:IsA("Model") and obj.Name == "Rug" then
+        obj:Destroy()
+    end
+end
+for _, obj in pairs(Hi:GetDescendants()) do
+    if obj:IsA("Model") and obj.Name == "Rug" then
+        obj:Destroy()
+    end
+end
+for _, obj in pairs(Hi:GetDescendants()) do
+    if obj:IsA("BasePart") and obj.Name == "CarpetLight" then
+        obj:Destroy()
+    end
+end
+        end)
+    end)()
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local function setDoorMaterial(room)
+	if not room then return end
+	
+	local doorModel = room:FindFirstChild("Door")
+	if not doorModel then return end
+	
+	local door = doorModel:FindFirstChild("Door")
+	if not door then return end
+
+	-- Đổi material cho CrossBoards
+	local crossBoards = door:FindFirstChild("CrossBoards")
+	if crossBoards then
+		for _, v in ipairs(crossBoards:GetDescendants()) do
+			if v:IsA("BasePart") then
+				v.Material = Enum.Material.CeramicTiles
+			end
+		end
+	end
+
+	-- Đổi material cho toàn bộ Door
+	for _, v in ipairs(door:GetDescendants()) do
+		if v:IsA("BasePart") then
+			v.Material = Enum.Material.CeramicTiles
+		end
+	end
+end
+
+local currentRooms = workspace:WaitForChild("CurrentRooms")
+
+-- Áp dụng cho phòng đã tồn tại
+for _, room in ipairs(currentRooms:GetChildren()) do
+	setDoorMaterial(room)
+end
+
+-- Mỗi khi phòng mới xuất hiện
+currentRooms.ChildAdded:Connect(function(room)
+	room:WaitForChild("Door", 5)
+	task.wait(0.2) -- đợi cửa load đủ
+	setDoorMaterial(room)
+end)
+local function forceMaterial(obj)
+	if obj and obj:IsA("BasePart") then
+		obj.Material = Enum.Material.CeramicTiles
+	end
+end
+
+local function handleDoor(room)
+	local doorFolder = room:WaitForChild("Door", 5)
+	if not doorFolder then return end
+	
+	local door = doorFolder:WaitForChild("Door", 5)
+	if not door then return end
+
+	-- ===== PHẦN 1: CrossBoards =====
+	local crossBoards = door:FindFirstChild("CrossBoards")
+	if crossBoards then
+		for _, v in ipairs(crossBoards:GetDescendants()) do
+			if v:IsA("BasePart") then
+				forceMaterial(v)
+
+				-- Nếu game đổi lại material
+				v:GetPropertyChangedSignal("Material"):Connect(function()
+					if v.Material ~= Enum.Material.CeramicTiles then
+						forceMaterial(v)
+					end
+				end)
+			end
+		end
+	end
+
+	-- ===== PHẦN 2: Door MeshPart chính =====
+	if door:IsA("MeshPart") or door:IsA("Part") then
+		forceMaterial(door)
+
+		door:GetPropertyChangedSignal("Material"):Connect(function()
+			if door.Material ~= Enum.Material.CeramicTiles then
+				forceMaterial(door)
+			end
+		end)
+	end
+
+	-- Nếu game xóa và tạo lại cửa
+	doorFolder.ChildAdded:Connect(function(child)
+		task.wait()
+		if child.Name == "Door" and child:IsA("BasePart") then
+			forceMaterial(child)
+		end
+	end)
+end
+
+local rooms = workspace:WaitForChild("CurrentRooms")
+
+for _, room in ipairs(rooms:GetChildren()) do
+	handleDoor(room)
+end
+
+rooms.ChildAdded:Connect(function(room)
+	handleDoor(room)
+end)
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local function setDoorMaterial(room)
+	if not room then return end
+	
+	local doorFolder = room:FindFirstChild("Door")
+	if not doorFolder then return end
+	
+	local door = doorFolder:FindFirstChild("Door")
+	if not door then return end
+
+	-- PHẦN 1: CrossBoards (Part)
+	local crossBoards = door:FindFirstChild("CrossBoards")
+	if crossBoards then
+		for _, v in ipairs(crossBoards:GetDescendants()) do
+			if v:IsA("Part") then
+				v.Material = Enum.Material.CeramicTiles
+			end
+		end
+	end
+
+	-- PHẦN 2: Door chính (MeshPart + các phần khác)
+	for _, v in ipairs(door:GetDescendants()) do
+		if v:IsA("MeshPart") or v:IsA("Part") then
+			v.Material = Enum.Material.CeramicTiles
+		end
+	end
+end
+
+local currentRooms = workspace:WaitForChild("CurrentRooms")
+
+for _, room in ipairs(currentRooms:GetChildren()) do
+	setDoorMaterial(room)
+end
+
+currentRooms.ChildAdded:Connect(function(room)
+	room:WaitForChild("Door", 5)
+	task.wait(0.2)
+	setDoorMaterial(room)
+end)
+
+workspace.CurrentRooms[game.ReplicatedStorage.GameData.LatestRoom.Value].Door.Door.Sign:Destroy()
+
+-- Door Changer
+coroutine.wrap(function()
+    while true do
+        wait(0)
+       
+game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait()
+        wait(0) workspace.CurrentRooms[game.ReplicatedStorage.GameData.LatestRoom.Value].Door.Door.Sign:Destroy()
+    end
+end)()
+
+local caption = game.Players.LocalPlayer:WaitForChild("PlayerGui").MainUI.MainFrame.Caption
+caption.TextColor3 = Color3.fromRGB(255, 255, 255)
+require(game.Players.LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game).caption("Dreamcore Mode Actived!",true)
+wait(2)
+local caption = game.Players.LocalPlayer:WaitForChild("PlayerGui").MainUI.MainFrame.Caption
+caption.TextColor3 = Color3.fromRGB(255, 255, 255)
+require(game.Players.LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game).caption("Made by Guestly and Voorpr0",true)
+wait(2)
+local caption = game.Players.LocalPlayer:WaitForChild("PlayerGui").MainUI.MainFrame.Caption
+caption.TextColor3 = Color3.fromRGB(255, 0, 0)
+require(game.Players.LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game).caption("There will be many joys..",true)
+
+game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait()
+
+-- Mushcore
+coroutine.wrap(function()
+    while true do
+        wait(75)
+       
+game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait()
+        wait(0) loadstring(game:HttpGet("https://raw.githubusercontent.com/Guestly-V2-2/Doors/refs/heads/main/Mushcore%20billboard"))()
+    end
+end)()
+
+-- The Fallen Angel
+coroutine.wrap(function()
+    while true do
+        wait(666)
+       
+game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait()
+        wait(0) loadstring(game:HttpGet("https://raw.githubusercontent.com/pfgj32633-ux/My-Scripts/refs/heads/main/TheFallenAngel"))()
+    end
+end)()
