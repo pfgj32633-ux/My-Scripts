@@ -1,0 +1,40 @@
+local num=0
+local currentLoadedRoom = workspace.CurrentRooms[game:GetService("ReplicatedStorage").GameData.LatestRoom.Value]
+if currentLoadedRoom:FindFirstChild("Nodes") then
+   num = math.floor(#currentLoadedRoom.Nodes:GetChildren()/2)
+end
+
+local ball=game:GetObjects("rbxassetid://119645743419086")[1]
+ball.CFrame=(
+    num==0 and currentLoadedRoom[currentLoadedRoom.Name] or currentLoadedRoom.Nodes[num]
+).CFrame + Vector3.new(0, 4, 0)
+
+ball.Parent = workspace
+ball["Dreamcore Ice Cream"].Volume = 1.1
+ball["Dreamcore Ice Cream"].Looped = true
+ball.Size = Vector3.new(8,8,8)
+local light = Instance.new("PointLight", ball)
+light.Range = 5
+local model = ball
+	if not model then return end
+
+	local mainPart = ball
+	if not mainPart then return end
+
+	-- ===== RANDOM SPAWN IN ROOM =====
+	local room = workspace.CurrentRooms
+		:FindFirstChild(game.ReplicatedStorage.GameData.LatestRoom.Value)
+
+	if room and room:FindFirstChild("Parts")
+		and room.Parts:FindFirstChild("Floor") then
+
+		local floor = room.Parts.Floor
+		local size = floor.Size
+
+		local offsetX = math.random(-size.X/2 + 2, size.X/2 - 2)
+		local offsetZ = math.random(-size.Z/2 + 2, size.Z/2 - 2)
+
+		mainPart.CFrame =
+			floor.CFrame
+			* CFrame.new(offsetX, 5, offsetZ)
+	end
