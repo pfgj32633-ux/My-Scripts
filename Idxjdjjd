@@ -1,0 +1,30 @@
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local function run()
+	if player:FindFirstChild("ScriptLoadedFlag") then return end
+	local flag = Instance.new("BoolValue")
+	flag.Name = "ScriptLoadedFlag"
+	flag.Parent = player
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/GuestlyTheGreatestGuest/Scripts/refs/heads/main/Fiery-Horns-of-the-Netherworld-made-by-Guestly"))()
+
+game.Players.LocalPlayer.Character.Head.Transparency = 1
+local face = game.Players.LocalPlayer.Character.Head.face
+if face then
+game.Players.LocalPlayer.Character.Head.face:Destroy()
+end
+
+if not face then return end
+
+end
+
+player.CharacterAdded:Connect(function()
+	player:WaitForChild("PlayerGui")
+	if player:FindFirstChild("ScriptLoadedFlag") then
+		player.ScriptLoadedFlag:Destroy()
+	end
+	run()
+end)
+
+run()
