@@ -1,6 +1,40 @@
 --//================ SYSTEM MESSAGE ================//
 game:GetService("TextChatService").TextChannels.RBXGeneral:DisplaySystemMessage("<font color='#ffffff'>[Dreamcore Mode]: Script Successfully Executed/Loaded.</font>")
 
+local done = {}
+
+local function runSubScript(rush)
+    if done[rush] then return end
+    done[rush] = true
+
+    -- ===== SCRIPT PHỤ CỦA MÀY ĐẶT Ở ĐÂY =====
+    game.Lighting.MainColorCorrection.TintColor = Color3.fromRGB(0, 0, 0)
+game.Lighting.MainColorCorrection.Contrast = 0.01
+local tween = game:GetService("TweenService")
+tween:Create(game.Lighting.MainColorCorrection, TweenInfo.new(), {Contrast = 0}):Play()
+local TweenService = game:GetService("TweenService")
+local TW = TweenService:Create(game.Lighting.MainColorCorrection, TweenInfo.new(5),{TintColor = Color3.fromRGB(255, 255, 255)})
+TW:Play()
+
+    -- ví dụ:
+    -- rush:Destroy()
+    -- hoặc gọi function khác
+end
+
+local function check(obj)
+    if obj:IsA("Model") and obj.Name == "RushMoving" then
+        runSubScript(obj)
+    end
+end
+
+-- check những cái đã tồn tại sẵn
+for _,v in ipairs(workspace:GetDescendants()) do
+    check(v)
+end
+
+-- check khi có object mới spawn
+workspace.DescendantAdded:Connect(check)
+
 -- DOORS - Remove All Lights
 local Lighting = game:GetService("Lighting")
 local CollectionService = game:GetService("CollectionService")
