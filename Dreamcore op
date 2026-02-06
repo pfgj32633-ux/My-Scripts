@@ -247,7 +247,7 @@ Camera.ChildAdded:Connect(
         local CustomMusic = getGitSoundId("https://github.com/Guestly-V2-2/Music-Sound/raw/refs/heads/main/XRecorder_Edited_20260123_05.mp3", "DreamLight")
         CustomMusic.Parent = SoundService
         CustomMusic.Looped = false
-        CustomMusic.Volume = 0.01
+        CustomMusic.Volume = 0
         CustomMusic:Play()
     end
 )
