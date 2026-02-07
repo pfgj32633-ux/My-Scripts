@@ -36,17 +36,36 @@ local killedByEntity = false
 local function spawnEntity()
 	local room = workspace.CurrentRooms:FindFirstChild(tostring(latestRoomValue.Value))
 	if not room then return end
-	
-	local base = room:FindFirstChild("Base") or room:FindFirstChildWhichIsA("BasePart")
-	if not base then return end
-	
+
 	part = Instance.new("Part")
 	part.Size = Vector3.new(5,5,5)
 	part.Anchored = true
 	part.Transparency = 1
 	part.CanCollide = false
-	part.Position = base.Position + Vector3.new(0,5,0)
 	part.Parent = workspace
+ local model = part
+	if not model then return end
+
+	local mainPart = part
+	if not mainPart then return end
+
+	-- ===== RANDOM SPAWN IN ROOM =====
+	local room = workspace.CurrentRooms
+		:FindFirstChild(game.ReplicatedStorage.GameData.LatestRoom.Value)
+
+	if room and room:FindFirstChild("Parts")
+		and room.Parts:FindFirstChild("Floor") then
+
+		local floor = room.Parts.Floor
+		local size = floor.Size
+
+		local offsetX = math.random(-size.X/2 + 2, size.X/2 - 2)
+		local offsetZ = math.random(-size.Z/2 + 2, size.Z/2 - 2)
+
+		mainPart.CFrame =
+			floor.CFrame
+			* CFrame.new(offsetX, 5, offsetZ)
+	end
 	
 	local light = Instance.new("PointLight", part)
 	light.Range = 15
@@ -56,9 +75,11 @@ local function spawnEntity()
 	local sound = Instance.new("Sound", part)
 	sound.SoundId = "rbxassetid://4860560167"
 	sound.Looped = true
-	sound.Volume = 3
+	sound.Volume = 5
 	sound.PlaybackSpeed = 3
 	sound:Play()
+
+local effect = Instance.new("DistortionSoundEffect", sound)
 	
 	local billboard = Instance.new("BillboardGui", part)
 	billboard.Size = UDim2.new(15,0,15,0)
