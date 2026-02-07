@@ -1,0 +1,391 @@
+game.Lighting.MainColorCorrection.TintColor = Color3.fromRGB(0, 0, 0)
+game.Lighting.MainColorCorrection.Contrast = 0.01
+local tween = game:GetService("TweenService")
+tween:Create(game.Lighting.MainColorCorrection, TweenInfo.new(2.5), {Contrast = 0}):Play()
+local TweenService = game:GetService("TweenService")
+local TW = TweenService:Create(game.Lighting.MainColorCorrection, TweenInfo.new(5),{TintColor = Color3.fromRGB(3, 183, 255)})
+TW:Play()
+
+local spawn = Instance.new("Sound")
+	spawn.SoundId = "rbxassetid://6201159919"
+	spawn.Looped = false
+	spawn.Volume = 1
+ spawn.Parent = workspace
+	spawn.PlaybackSpeed = 1
+	spawn:Play()
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local plr = Players.LocalPlayer
+local cam = workspace.CurrentCamera
+local latestRoomValue = game.ReplicatedStorage.GameData.LatestRoom
+
+local DAMAGE_PER_SEC = 5
+local SHAKE_POWER = 0.15
+
+local part
+local imageLabel
+local humConnection
+local renderConnection
+local killedByEntity = false
+
+-------------------------------------------------
+-- SPAWN ENTITY
+-------------------------------------------------
+local function spawnEntity()
+	local room = workspace.CurrentRooms:FindFirstChild(tostring(latestRoomValue.Value))
+	if not room then return end
+	
+	local base = room:FindFirstChild("Base") or room:FindFirstChildWhichIsA("BasePart")
+	if not base then return end
+	
+	part = Instance.new("Part")
+	part.Size = Vector3.new(5,5,5)
+	part.Anchored = true
+	part.Transparency = 1
+	part.CanCollide = false
+	part.Position = base.Position + Vector3.new(0,5,0)
+	part.Parent = workspace
+	
+	local light = Instance.new("PointLight", part)
+	light.Range = 15
+	light.Brightness = 5
+	light.Color = Color3.fromRGB(0,0,255)
+	
+	local sound = Instance.new("Sound", part)
+	sound.SoundId = "rbxassetid://4860560167"
+	sound.Looped = true
+	sound.Volume = 3
+	sound.PlaybackSpeed = 3
+	sound:Play()
+	
+	local billboard = Instance.new("BillboardGui", part)
+	billboard.Size = UDim2.new(15,0,15,0)
+	billboard.AlwaysOnTop = true
+	billboard.StudsOffset = Vector3.new(0,0.3,0)
+	billboard.Adornee = part
+	
+	imageLabel = Instance.new("ImageLabel", billboard)
+	imageLabel.Size = UDim2.new(1,0,1,0)
+	imageLabel.BackgroundTransparency = 1
+	imageLabel.Image = "rbxassetid://104956664701555"
+	
+	renderConnection = RunService.RenderStepped:Connect(function()
+		if imageLabel then
+			local x = (math.random()-0.5)*SHAKE_POWER
+			local y = (math.random()-0.5)*SHAKE_POWER
+			billboard.StudsOffset = Vector3.new(x,0.3+y,0)
+		end
+	end)
+end
+
+-------------------------------------------------
+-- CHECK NHÌN
+-------------------------------------------------
+local function isLooking()
+	if not part then return false end
+	
+	local toPart = (part.Position - cam.CFrame.Position).Unit
+	local dot = cam.CFrame.LookVector:Dot(toPart)
+	if dot < 0.6 then return false end
+	
+	local _, onScreen = cam:WorldToViewportPoint(part.Position)
+	return onScreen
+end
+
+-------------------------------------------------
+-- DAMAGE
+-------------------------------------------------
+local function startDamage(hum)
+	if humConnection then humConnection:Disconnect() end
+	
+	local timer = 0
+	
+	humConnection = RunService.Heartbeat:Connect(function(dt)
+		if not part then return end
+		
+		if not isLooking() then
+			timer += dt
+			
+			if timer >= 1 then
+				hum:TakeDamage(5)
+				killedByEntity = true
+				timer = 0
+			end
+		else
+			timer = 0 -- nhìn lại → reset đếm
+		end
+	end)
+end
+
+-------------------------------------------------
+-- DEATH HOOK
+-------------------------------------------------
+local function hookChar(char)
+	local hum = char:WaitForChild("Humanoid")
+	
+	hum.Died:Connect(function()
+		if killedByEntity then
+			local folder = game.ReplicatedStorage:FindFirstChild("EntityDeathScripts")
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+
+--// SERVICES
+local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
+
+--// REMOVE OLD GUI
+pcall(function()
+	if CoreGui:FindFirstChild("JumpscareGui") then
+		CoreGui.JumpscareGui:Destroy()
+	end
+end)
+
+--// LOAD SOUND
+local function loadSound(data)
+	local sound = Instance.new("Sound")
+	local id = tostring(data[1])
+	local props = data[2] or {}
+
+	for k, v in pairs(props) do
+		if k ~= "SoundId" and k ~= "Parent" then
+			sound[k] = v
+		end
+	end
+
+	if id:find("rbxasset://") then
+		sound.SoundId = id
+	else
+		sound.SoundId = "rbxassetid://" .. id:gsub("%D", "")
+	end
+
+	sound.Parent = workspace
+	return sound
+end
+
+--// CONFIG (BẠN CÓ THỂ CHỈNH)
+local config = {
+	Image1 = "rbxassetid://104956664701555",
+	Image2 = "rbxassetid://104956664701555",
+
+	Shake = true,
+
+	Sound1 = {89321432056195, {Volume = 10}},
+	Sound2 = {89321432056195, {Volume = 10}},
+
+	Flashing = {
+		true,
+		Color3.fromRGB(3, 183, 255)
+	},
+
+	Tease = {
+		true,
+		Min = 1,
+		Max = 2
+	}
+}
+
+--// CREATE GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "JumpscareGui"
+gui.IgnoreGuiInset = true
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.Parent = CoreGui
+
+local bg = Instance.new("Frame")
+bg.Size = UDim2.new(1, 0, 1, 0)
+bg.BackgroundColor3 = Color3.new(0, 0, 0)
+bg.BorderSizePixel = 0
+bg.ZIndex = 999
+bg.Parent = gui
+
+local face = Instance.new("ImageLabel")
+face.AnchorPoint = Vector2.new(0.5, 0.5)
+face.Position = UDim2.new(0.5, 0, 0.5, 0)
+face.Size = UDim2.new(0, 150, 0, 150)
+face.BackgroundTransparency = 1
+face.Image = config.Image1
+face.ResampleMode = Enum.ResamplerMode.Pixelated
+face.Parent = bg
+
+--// SIZES
+local screenY = gui.AbsoluteSize.Y
+local minSize = screenY / 5
+local maxSize = screenY / 2.5
+
+--// TEASE
+local sound1, sound2
+if config.Sound1 then sound1 = loadSound(config.Sound1) end
+if config.Sound2 then sound2 = loadSound(config.Sound2) end
+
+if config.Tease and config.Tease[1] then
+	local loops = math.random(config.Tease.Min, config.Tease.Max)
+	if sound1 then sound1:Play() end
+
+	for _ = 1, loops do
+		task.wait(math.random(10, 20) / 100)
+		local grow = (maxSize - minSize) / loops
+		face.Size = face.Size + UDim2.new(0, grow, 0, grow)
+	end
+end
+
+--// FLASHING
+if config.Flashing and config.Flashing[1] then
+	task.spawn(function()
+		while gui.Parent do
+			bg.BackgroundColor3 = config.Flashing[2]
+			task.wait(math.random(25, 100) / 1000)
+			bg.BackgroundColor3 = Color3.new(0, 0, 0)
+			task.wait(math.random(25, 100) / 1000)
+		end
+	end)
+end
+
+--// SHAKE
+if config.Shake then
+	task.spawn(function()
+		local basePos = face.Position
+		while gui.Parent do
+			face.Position = basePos + UDim2.new(0, math.random(-10, 10), 0, math.random(-10, 10))
+			face.Rotation = math.random(-5, 5)
+			task.wait()
+		end
+	end)
+end
+
+--// FINAL JUMPSCARE
+face.Image = config.Image2
+face.Size = UDim2.new(0, maxSize, 0, maxSize)
+
+if sound2 then sound2:Play() end
+
+TweenService:Create(face, TweenInfo.new(0.75), {
+	Size = UDim2.new(0, screenY * 3, 0, screenY * 3),
+	ImageTransparency = 0.5
+}):Play()
+
+task.wait(0.75)
+
+--// CLEANUP
+gui:Destroy()
+if sound1 then sound1:Destroy() end
+if sound2 then sound2:Destroy() end
+
+-- ================= DEATH HINT =================
+firesignal(
+    game.ReplicatedStorage.RemotesFolder.DeathHint.OnClientEvent,
+    {
+        "Atleast pay attention to him",
+        "Don't look away.",
+        "He doesnt like that."
+    },
+    "Blue"
+)
+
+game.ReplicatedStorage.GameStats["Player_" .. player.Name]
+    .Total.DeathCause.Value = "Aggressive"
+
+game.Lighting.MainColorCorrection.TintColor = Color3.fromRGB(3, 183, 255)
+game.Lighting.MainColorCorrection.Contrast = 0.01
+local tween = game:GetService("TweenService")
+tween:Create(game.Lighting.MainColorCorrection, TweenInfo.new(2.5), {Contrast = 0}):Play()
+local TweenService = game:GetService("TweenService")
+local TW = TweenService:Create(game.Lighting.MainColorCorrection, TweenInfo.new(0.1),{TintColor = Color3.fromRGB(255, 255, 255)})
+TW:Play()
+
+			if folder then
+				for _,v in pairs(folder:GetChildren()) do
+					v:Clone().Parent = char
+				end
+			end
+
+-- One-time execute guard
+if getgenv()._BLUE_ALREADY_EXECUTED then
+    warn("[SCRIPT] Script đã được chạy trước đó, từ chối execute!")
+    return
+end
+
+getgenv()._BLUE_ALREADY_EXECUTED = true
+
+-- ======================
+-- SCRIPT CHÍNH BẮT ĐẦU Ở ĐÂY
+-- ======================
+
+print("[SCRIPT] Execute lần đầu thành công!")
+
+local achievementGiver = loadstring(game:HttpGet("https://raw.githubusercontent.com/Voor-Pr00/Achivements/refs/heads/main/Voorpr0"))()
+
+---====== Display achievement ======---
+achievementGiver({
+    Title = "Forced attention",
+    Desc = "Stop look away!",
+    Reason = "Died to Aggressive",
+    Image = "rbxassetid://104956664701555"
+})
+		end
+	end)
+	
+	startDamage(hum)
+end
+
+-------------------------------------------------
+-- 🔥 RESET ALL
+-------------------------------------------------
+local function resetAll()
+	if part then part:Destroy() part = nil end
+	if renderConnection then renderConnection:Disconnect() renderConnection = nil end
+	if humConnection then humConnection:Disconnect() humConnection = nil end
+	killedByEntity = false
+end
+
+-------------------------------------------------
+-- 🚪 KHI QUA PHÒNG MỚI
+-------------------------------------------------
+latestRoomValue.Changed:Connect(function()
+	resetAll()
+
+game.Lighting.MainColorCorrection.TintColor = Color3.fromRGB(3, 183, 255)
+game.Lighting.MainColorCorrection.Contrast = 0.01
+local tween = game:GetService("TweenService")
+tween:Create(game.Lighting.MainColorCorrection, TweenInfo.new(2.5), {Contrast = 0}):Play()
+local TweenService = game:GetService("TweenService")
+local TW = TweenService:Create(game.Lighting.MainColorCorrection, TweenInfo.new(5),{TintColor = Color3.fromRGB(255, 255, 255)})
+TW:Play()
+
+-- One-time execute guard
+if getgenv()._BLUE_ALREADY_EXECUTED then
+    warn("[SCRIPT] Script đã được chạy trước đó, từ chối execute!")
+    return
+end
+
+getgenv()._BLUE_ALREADY_EXECUTED = true
+
+-- ======================
+-- SCRIPT CHÍNH BẮT ĐẦU Ở ĐÂY
+-- ======================
+
+print("[SCRIPT] Execute lần đầu thành công!")
+
+local achievementGiver = loadstring(game:HttpGet("https://raw.githubusercontent.com/Voor-Pr00/Achivements/refs/heads/main/Voorpr0"))()
+
+---====== Display achievement ======---
+achievementGiver({
+    Title = "Forced attention",
+    Desc = "Stop look away!",
+    Reason = "Encountered Aggressive",
+    Image = "rbxassetid://104956664701555"
+})
+end)
+
+-------------------------------------------------
+-- START
+-------------------------------------------------
+spawnEntity()
+
+if plr.Character then hookChar(plr.Character) end
+plr.CharacterAdded:Connect(function(char)
+	killedByEntity = false
+	hookChar(char)
+end)
