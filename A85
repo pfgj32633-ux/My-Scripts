@@ -1,0 +1,408 @@
+--// ===== CONFIG =====
+local MODEL_ID = "rbxassetid://139707036517840"
+local DAMAGE_PER_SECOND = 25
+local HITBOX_SIZE = 45
+local MOVE_SPEED = 70
+local ROAM_TIME = 5
+local WAIT_AT_END = 2
+
+--// ===== SERVICES =====
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+
+local RoomsFolder = workspace:WaitForChild("CurrentRooms")
+
+--// ===== ROOM HELPERS =====
+local function getRoomNumber(room)
+    return tonumber(room.Name)
+end
+
+local function getOldestRoom()
+    local min = math.huge
+    local chosen
+    for _,r in ipairs(RoomsFolder:GetChildren()) do
+        local n = getRoomNumber(r)
+        if n and n < min then
+            min = n
+            chosen = r
+        end
+    end
+    return chosen
+end
+
+local function getPlayerCurrentRoom()
+    local plr = Players:GetPlayers()[1]
+    if not plr or not plr.Character then return end
+    local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    for _,room in ipairs(RoomsFolder:GetChildren()) do
+        local cf,size = room:GetBoundingBox()
+        local rel = hrp.Position - cf.Position
+        if math.abs(rel.X) <= size.X/2 and math.abs(rel.Z) <= size.Z/2 then
+            return room
+        end
+    end
+end
+
+local function getRoomCenter(room)
+    local cf = room:GetBoundingBox()
+    return cf.Position
+end
+
+-- 🔥 FLOOR DETECT FIX
+local function getRoomFloor(room)
+    if room:FindFirstChild("Parts") then
+        for _,v in ipairs(room.Parts:GetDescendants()) do
+            if v:IsA("BasePart") and v.Name:lower():find("floor") then
+                return v
+            end
+        end
+    end
+
+    local largest, area = nil, 0
+    for _,v in ipairs(room:GetDescendants()) do
+        if v:IsA("BasePart") then
+            local a = v.Size.X * v.Size.Z
+            if a > area then
+                largest = v
+                area = a
+            end
+        end
+    end
+    return largest
+end
+
+local function getRandomPointInRoom(room)
+    local floor = getRoomFloor(room)
+    if not floor then return getRoomCenter(room) end
+
+    local size = floor.Size
+    local cf = floor.CFrame
+
+    return (cf * CFrame.new(
+        math.random(-size.X/2, size.X/2),
+        2,
+        math.random(-size.Z/2, size.Z/2)
+    )).Position
+end
+
+--// ===== SPAWN =====
+local entity = game:GetObjects(MODEL_ID)[1]
+if not entity then return end
+entity.Parent = workspace
+entity.PrimaryPart = entity.PrimaryPart or entity:FindFirstChildWhichIsA("BasePart")
+if not entity.PrimaryPart then return end
+
+for _,v in ipairs(entity:GetDescendants()) do
+    if v:IsA("BasePart") then
+        v.CanCollide = false
+        v.Massless = true
+    end
+end
+
+local oldestRoom = getOldestRoom()
+if not oldestRoom or not oldestRoom:FindFirstChild("RoomEntrance") then return end
+
+local entranceCF = oldestRoom.RoomEntrance.CFrame
+local spawnPos = entranceCF.Position - entranceCF.LookVector * 20
+entity:PivotTo(CFrame.new(spawnPos, entranceCF.Position))
+
+--// ===== HITBOX =====
+local hitbox = Instance.new("Part")
+hitbox.Shape = Enum.PartType.Ball
+hitbox.Size = Vector3.new(HITBOX_SIZE, HITBOX_SIZE, HITBOX_SIZE)
+hitbox.Transparency = 1
+hitbox.Anchored = true
+hitbox.CanCollide = false
+hitbox.Parent = workspace
+
+RunService.Heartbeat:Connect(function()
+    if entity.PrimaryPart then
+        hitbox.Position = entity.PrimaryPart.Position
+    end
+end)
+
+--// ===== HIDING CHECK =====
+local function isPlayerHiding(char)
+    if char:GetAttribute("Hiding") == true then return true end
+    local hidingVal = char:FindFirstChild("Hiding")
+    return hidingVal and hidingVal:IsA("BoolValue") and hidingVal.Value
+end
+
+--// ===== DAMAGE LOOP (FIXED) =====
+local function entityNearPlayer(plr)
+    if not entity or not entity.PrimaryPart then return false end
+    local char = plr.Character
+    if not char then return false end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return false end
+
+    return (hrp.Position - entity.PrimaryPart.Position).Magnitude <= HITBOX_SIZE
+end
+
+local hooked = {}
+
+local function hookHumanoid(plr, hum)
+    if hooked[hum] then return end
+    hooked[hum] = true
+
+    hum.Died:Connect(function()
+        if entityNearPlayer(plr) and _G.EntityKillHook then
+            _G.EntityKillHook()
+        end
+    end)
+end
+
+_G.EntityKillHook = function()
+    print("ENTITY KILL TRIGGERED")
+
+    local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+
+--// SERVICES
+local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
+
+--// REMOVE OLD GUI
+pcall(function()
+	if CoreGui:FindFirstChild("JumpscareGui") then
+		CoreGui.JumpscareGui:Destroy()
+	end
+end)
+
+--// LOAD SOUND
+local function loadSound(data)
+	local sound = Instance.new("Sound")
+	local id = tostring(data[1])
+	local props = data[2] or {}
+
+	for k, v in pairs(props) do
+		if k ~= "SoundId" and k ~= "Parent" then
+			sound[k] = v
+		end
+	end
+
+	if id:find("rbxasset://") then
+		sound.SoundId = id
+	else
+		sound.SoundId = "rbxassetid://" .. id:gsub("%D", "")
+	end
+
+	sound.Parent = workspace
+	return sound
+end
+
+--// CONFIG (BẠN CÓ THỂ CHỈNH)
+local config = {
+	Image1 = "rbxassetid://115081220467463",
+	Image2 = "rbxassetid://115081220467463",
+
+	Shake = true,
+
+	Sound1 = {138853573534340, {Volume = 10}},
+	Sound2 = {138853573534340, {Volume = 10}},
+
+	Flashing = {
+		true,
+		Color3.fromRGB(255, 0, 0)
+	},
+
+	Tease = {
+		true,
+		Min = 1,
+		Max = 3
+	}
+}
+
+--// CREATE GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "JumpscareGui"
+gui.IgnoreGuiInset = true
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.Parent = CoreGui
+
+local bg = Instance.new("Frame")
+bg.Size = UDim2.new(1, 0, 1, 0)
+bg.BackgroundColor3 = Color3.new(0, 0, 0)
+bg.BorderSizePixel = 0
+bg.BackgroundTransparency = 1
+bg.ZIndex = 999
+bg.Parent = gui
+
+local face = Instance.new("ImageLabel")
+face.AnchorPoint = Vector2.new(0.5, 0.5)
+face.Position = UDim2.new(0.5, 0, 0.5, 0)
+face.Size = UDim2.new(0, 150, 0, 150)
+face.BackgroundTransparency = 1
+face.Image = config.Image1
+face.ResampleMode = Enum.ResamplerMode.Pixelated
+face.Parent = bg
+
+--// SIZES
+local screenY = gui.AbsoluteSize.Y
+local minSize = screenY / 5
+local maxSize = screenY / 2.5
+
+--// TEASE
+local sound1, sound2
+if config.Sound1 then sound1 = loadSound(config.Sound1) end
+if config.Sound2 then sound2 = loadSound(config.Sound2) end
+
+if config.Tease and config.Tease[1] then
+	local loops = math.random(config.Tease.Min, config.Tease.Max)
+	if sound1 then sound1:Play() end
+
+	for _ = 1, loops do
+		task.wait(math.random(10, 20) / 100)
+		local grow = (maxSize - minSize) / loops
+		face.Size = face.Size + UDim2.new(0, grow, 0, grow)
+	end
+end
+
+--// FLASHING
+if config.Flashing and config.Flashing[1] then
+	task.spawn(function()
+		while gui.Parent do
+			bg.BackgroundColor3 = config.Flashing[2]
+			task.wait(math.random(25, 100) / 1000)
+			bg.BackgroundColor3 = Color3.new(0, 0, 0)
+			task.wait(math.random(25, 100) / 1000)
+		end
+	end)
+end
+
+--// SHAKE
+if config.Shake then
+	task.spawn(function()
+		local basePos = face.Position
+		while gui.Parent do
+			face.Position = basePos + UDim2.new(0, math.random(-10, 10), 0, math.random(-10, 10))
+			face.Rotation = math.random(-5, 5)
+			task.wait()
+		end
+	end)
+end
+
+--// FINAL JUMPSCARE
+face.Image = config.Image2
+face.Size = UDim2.new(0, maxSize, 0, maxSize)
+
+if sound2 then sound2:Play() end
+
+TweenService:Create(face, TweenInfo.new(0.75), {
+	Size = UDim2.new(0, screenY * 3, 0, screenY * 3),
+	ImageTransparency = 0.5
+}):Play()
+
+task.wait(0.75)
+
+--// CLEANUP
+gui:Destroy()
+if sound1 then sound1:Destroy() end
+if sound2 then sound2:Destroy() end
+
+-- ================= DEATH HINT =================
+firesignal(
+    game.ReplicatedStorage.RemotesFolder.DeathHint.OnClientEvent,
+    {
+        "You died to who called A-85..",
+        "He appears when the light suddenly turns green.",
+        "Hide as fast as possible you can.",
+        "He will find you every where in the room",
+        "Prepare for the storm coming."
+    },
+    "Blue"
+)
+
+game.ReplicatedStorage.GameStats["Player_" .. player.Name]
+    .Total.DeathCause.Value = "A-85"
+end
+
+RunService.Heartbeat:Connect(function(dt)
+    for _,plr in ipairs(Players:GetPlayers()) do
+        local char = plr.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+
+        if hum and hrp then
+hookHumanoid(plr, hum)
+
+            local dist = (hrp.Position - hitbox.Position).Magnitude
+            if dist <= HITBOX_SIZE/2 and not isPlayerHiding(char) then
+                hum:TakeDamage(DAMAGE_PER_SECOND * dt)
+            end
+        end
+    end
+end)
+
+--// ===== HEIGHT FIX =====
+local function getEntityHeightOffset()
+    local _, size = entity:GetBoundingBox()
+    return size.Y / 2 + 0.5
+end
+local heightOffset = getEntityHeightOffset()
+
+--// ===== MOVE =====
+_G.EntityCenterHook = function(room)
+workspace.CurrentRooms:FindFirstChild(game.ReplicatedStorage.GameData.LatestRoom.Value).Assets.Light_Fixtures:Destroy()
+end
+
+local function moveTo(pos, isCenter)
+    local target = Vector3.new(pos.X, pos.Y + heightOffset, pos.Z)
+    local dist = (entity.PrimaryPart.Position - target).Magnitude
+    local t = dist / MOVE_SPEED
+
+    local tw = TweenService:Create(
+        entity.PrimaryPart,
+        TweenInfo.new(t, Enum.EasingStyle.Linear),
+        {CFrame = CFrame.new(target)}
+    )
+
+    tw:Play()
+    tw.Completed:Wait()
+
+    -- 📍 Nếu đây là lần tới center phòng
+    if isCenter and _G.EntityCenterHook then
+        pcall(_G.EntityCenterHook, getPlayerCurrentRoom())
+    end
+end
+
+--// ===== MAIN BEHAVIOR =====
+task.spawn(function()
+    local targetRoom = getPlayerCurrentRoom()
+    if not targetRoom then return end
+
+    local startNum = getRoomNumber(getOldestRoom())
+    local endNum = getRoomNumber(targetRoom)
+
+    for i = startNum, endNum do
+        local room = RoomsFolder:FindFirstChild(tostring(i))
+        if room and room:FindFirstChild("RoomEntrance") then
+            moveTo(room.RoomEntrance.Position)
+        end
+    end
+
+    local center = getRoomCenter(targetRoom)
+    moveTo(center, true)
+
+    local stop = tick() + ROAM_TIME
+    while tick() < stop do
+        moveTo(getRandomPointInRoom(targetRoom))
+    end
+
+    moveTo(center)
+
+    for i = endNum, startNum, -1 do
+        local room = RoomsFolder:FindFirstChild(tostring(i))
+        if room and room:FindFirstChild("RoomEntrance") then
+            moveTo(room.RoomEntrance.Position)
+        end
+    end
+
+    task.wait(WAIT_AT_END)
+    hitbox:Destroy()
+    entity:Destroy()
+end)
